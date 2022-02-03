@@ -1,0 +1,27 @@
+{
+  "name": "adddatabasegrapql",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon --config nodemon.json src/index.ts",
+    "dev:debug": "nodemon --config nodemon.json --inspect-brk src/index.ts"
+  },
+  "author": "Adams",
+  "license": "ISC",
+  "dependencies": {
+    "@types/pg": "^7.14.11",
+    "apollo-server": "^3.6.2",
+    "dotenv": "^8.2.0",
+    "graphql": "^16.3.0",
+    "pg": "^8.5.1",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.12",
+    "@types/uuid": "^8.3.4",
+    "ts-node": "^10.4.0",
+    "ts-node-dev": "^1.1.6",
+    "typescript": "^4.5.5"
+  }
+}
