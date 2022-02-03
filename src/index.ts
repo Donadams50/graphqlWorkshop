@@ -4,7 +4,7 @@ import {typeDefs} from './graphql/schema';
 
 import {resolvers} from './graphql/resolvers'
 
-import {createUserTable, listTables, addUser, getUsers } from './uitils'
+import {createUserTable } from './uitils'
 
 
 
@@ -16,11 +16,9 @@ createUserTable();
 
 //getUsers()
 
-
-
  const server = new ApolloServer({typeDefs, resolvers});
 
-   server.listen().then(({url}: {url: string}) => {
+  server.listen().then(({url}: {url: string}) => {
        console.log(`server listening on ${url}`);
    })
 
