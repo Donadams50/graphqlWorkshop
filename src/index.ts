@@ -4,17 +4,24 @@ import {typeDefs} from './graphql/schema';
 
 import {resolvers} from './graphql/resolvers'
 
-import {createUserTable } from './uitils'
+import {createUserTable , addUser, createProjectTable, addProject, createAssignmentTable, addAssignment} from './uitils'
 
 
-
-createUserTable();
+//createUserTable();
 
 //listTables();
 
-//addUser(2, "Ademola Buhari", "demola@gmail.com", "babaforthegirls");
+//addUser( "Cliton Adamson", "adamsson@gmail.com", "bbc123");
 
 //getUsers()
+
+//createProjectTable()
+
+//ddProject("Onboard New Developer", "Active")
+
+//createAssignmentTable()
+
+//addAssignment("adamsson@gmail.com", 7, "Cliton Adamson")
 
  const server = new ApolloServer({typeDefs, resolvers});
 
