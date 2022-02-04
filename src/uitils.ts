@@ -1,6 +1,14 @@
 import { pool } from "../database/db";
+import bcrypt from "bcryptjs";
 
 import {v4 as uuidv4} from 'uuid'
+
+interface User{
+  id: string
+  name: string
+  email: string
+  password: string
+}
 
 export const readQuery = async (query: string) => {
   try {
@@ -11,6 +19,135 @@ export const readQuery = async (query: string) => {
   }
 };
 
+export const findUserByEmail = async (email: string)=> {
+  const query = {
+      text: 'SELECT * FROM users WHERE email = $1',
+      values: [email]
+  }
+
+  try {
+      const res = await pool.query(query);
+      return res.rows;
+  } catch (err) {
+      console.error(err);
+  }
+  return [{
+      id: '0',
+      name: "J Doe",
+      email: 'jdoe@zcorp.com',
+      password: 'passwordz'
+  }]
+};
+
+export const getUsersFromUsersTable = async () => {
+  const query = `
+  SELECT * FROM users;
+  `;
+  
+  return readQuery(query);
+  
+}
+
+export const getAssignments = async () => {
+  const query = `
+  SELECT assignments.user_id, users.name, assignments.project_id, projects.title, projects.status 
+  FROM ((users
+  INNER JOIN assignments
+  ON users.id = assignments.user_id)
+  INNER JOIN projects
+  ON assignments.project_id = projects.id);
+  `;
+
+  return readQuery(query);
+}
+
+export const addUser = async (name: string, email: string, password: string) => {
+  const harshedPassword = await hashPassword(password);
+  const query = {
+      text: 'INSERT INTO users(id, name, email, password) VALUES($1, $2, $3, $4)',
+      values: [uuidv4(), name, email, harshedPassword],
+  }
+  
+  
+  const userQuery = await findUserByEmail(email);
+  if (userQuery?.length === 0) {
+      try {
+          const res = await pool.query(query);
+          console.log("User added.");
+      } catch (err) {
+          console.error(err);
+      }
+  } else {
+      console.log("Unable to add user. Check your email address");
+  }
+}
+
+// get all users
+export const getUsers = async () => {
+  const usersFromUsersTable = await getUsersFromUsersTable();
+  const assignments = await getAssignments();
+  const users = await usersFromUsersTable?.map(async (user) => {
+      let projects: object [] = [];
+      await assignments?.forEach(assignment => {
+          if (user.id === assignment.user_id) {
+              projects.push({
+                 id: assignment.project_id,
+                 title: assignment.title,
+                 status: assignment.status 
+              });
+          }
+      })
+      return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          projects: projects,
+      }
+  })
+  return users;   
+}
+
+// add project
+export const addProject = async (title: string, status: string) => {
+  const query = {
+      text: 'INSERT INTO projects(title, status) VALUES($1, $2)',
+      values: [title, status],
+  }
+
+  try {
+      const res = await pool.query(query);
+      console.log("Project added.");
+  } catch (err) {
+      console.error(err);
+  } 
+}
+
+
+// add assignment
+export const addAssignment = async (user_email: string, project_id: number, user_name: string) => {
+  let user_id: string = '';
+  const user = await findUserByEmail(user_email);
+  if (user?.length === 0) {
+      console.log("User with that email not found.")
+  } else {
+    user_id = user[0].id;  
+  }
+
+  const query = {
+      text: 'INSERT INTO assignments(project_id, user_id, user_name) VALUES($1, $2, $3)',
+      values: [project_id, user_id, user_name],
+  }
+
+  try {
+      const res = await pool.query(query);
+      console.log('Assignment created.');
+  } catch (err) {
+      console.error(err);
+  } 
+}
+
+
+// create user table function
 export const createUserTable = async () => {
   const query = `
   CREATE TABLE users (
@@ -23,6 +160,39 @@ export const createUserTable = async () => {
 
   return readQuery(query);
 };
+
+
+//create project table function
+export const createProjectTable = async () => {
+
+  const query = `
+  CREATE TABLE projects (
+      id serial primary key,
+      title varchar,
+      status varchar
+  )
+  `;
+
+  return await readQuery(query) ? "Table created." : "Unable to create table.";
+}
+
+// create assignment table
+
+export const createAssignmentTable = async () => {
+
+  const query = `
+  CREATE TABLE assignments (
+      id serial,
+      project_id int references projects (id),
+      user_id varchar references users (id),
+      primary key (project_id, user_id),
+      user_name varchar
+  )
+  `;
+
+  return await readQuery(query) ? "Table created" : "Unable to create table.";
+}
+
 
 export const listTables = async () => {
   const query = `
@@ -40,39 +210,17 @@ export const listTables = async () => {
   }
 };
 
-export const addUser = async (
-  id: number,
-  name: string,
-  email: string,
-  password: string
-) => {
-  const query = {
-    text: "INSERT INTO users(id, name, email, password ) VALUES($1, $2, $3, $4)",
-    values: [id, name, email, password],
-  };
 
-  try {
-    const res = await pool.query(query);
-    console.log("User craeted succesfully");
-  } catch (err) {
-    console.error(err);
-  } finally {
-    pool.end();
-  }
+export const hashPassword = async (userPassword: String) => {
+  const convertedUserPassword = userPassword.toString();
+  const harshPassword = await bcrypt.hash(convertedUserPassword, 10);
+  return harshPassword;
 };
 
-export const getUsers = async () => {
-  const query = ` 
-     SELECT * FROM users;
-     `;
 
-  try {
-    const res = await pool.query(query);
-    console.log(res.rows);
-    return res.rows;
-  } catch (err) {
-    console.error(err);
-  } finally {
-    pool.end();
-  }
+export const comparePassword = async (password: any, hashedPassword: string) => {
+  const convertedPassword = password.toString();
+  return  await bcrypt.compare(convertedPassword, hashedPassword);
 };
+
+

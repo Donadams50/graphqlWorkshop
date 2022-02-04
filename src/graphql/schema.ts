@@ -2,7 +2,7 @@ import { gql } from "apollo-server";
 
 export const typeDefs = gql`
   type User {
-    id: Int
+    id: String
     name: String
     email: String
     projects: [Project]
@@ -12,7 +12,7 @@ export const typeDefs = gql`
   type Project {
     id: Int
     title: String
-    active: Boolean!
+    status: String!
     members: [User]
   }
 
